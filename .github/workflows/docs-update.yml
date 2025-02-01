@@ -13,15 +13,8 @@ jobs:
     - name: Checkout source repo
       uses: actions/checkout@v4
       with:
-        repository: manticoresoftware/manticoresearch
+        repository: https://github.com/manticoresoftware/manticoresearch.git
         path: source-repo
-
-    - name: Checkout target repo
-      uses: actions/checkout@v4
-      with:
-        repository: test/manticore-doc
-        token: ${{ secrets.ACCESS_TOKEN }}
-        path: target-repo
 
     - name: Prepare target directory
       run: |
@@ -32,7 +25,7 @@ jobs:
 
     - name: Sync documentation
       run: |
-        cp -a source-repo/manual/. target-repo/manual/
+        cp -a manticore/manual/. manual/
 
     - name: Check for changes
       id: check_changes
