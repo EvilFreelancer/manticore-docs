@@ -1,0 +1,54 @@
+name: Sync Manticore Documentation
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Daily at 00:00 UTC
+  workflow_dispatch:
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source repo
+      uses: actions/checkout@v4
+      with:
+        repository: manticoresoftware/manticoresearch
+        path: source-repo
+
+    - name: Checkout target repo
+      uses: actions/checkout@v4
+      with:
+        repository: test/manticore-doc
+        token: ${{ secrets.ACCESS_TOKEN }}
+        path: target-repo
+
+    - name: Prepare target directory
+      run: |
+        # Очищаем только папку manual в целевом репозитории
+        mkdir -p target-repo/manual
+        cd target-repo/manual
+        find . -mindepth 1 -exec rm -rf {} +
+
+    - name: Sync documentation
+      run: |
+        cp -a source-repo/manual/. target-repo/manual/
+
+    - name: Check for changes
+      id: check_changes
+      run: |
+        cd target-repo
+        git add -A
+        echo "has_changes=$(git status --porcelain | wc -l)" >> $GITHUB_OUTPUT
+
+    - name: Commit and push changes
+      if: steps.check_changes.outputs.has_changes > 0
+      env:
+        GIT_USER: "GitHub Actions"
+        GIT_EMAIL: "actions@github.com"
+      run: |
+        cd target-repo
+        git config user.name "$GIT_USER"
+        git config user.email "$GIT_EMAIL"
+        git commit -m "Docs sync: $(date -u +'%Y-%m-%d %H:%M:%S')"
+        git push origin HEAD:main
